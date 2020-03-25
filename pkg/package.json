@@ -1,25 +1,20 @@
 {
   "name": "vue-i18n-extract",
-  "version": "1.0.4",
   "description": "Manage vue-i18n localization with static analysis",
-  "scripts": {
-    "build": "pack build",
-    "demo": "node ./pkg/dist-node/index.bin.js report -v './demo/vue-files/**/*.?(js|vue)' -l './demo/lang/**/*.?(json|js)'",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "lint": "tslint src/**/*",
-    "docs:dev": "vuepress dev docs",
-    "docs:build": "vuepress build docs"
-  },
+  "version": "1.0.4",
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/pixari/vue-i18n-extract"
+  "bin": {
+    "vue-i18n-extract": "dist-node/index.bin.js"
   },
-  "homepage": "https://github.com/pixari/vue-i18n-extract",
-  "bugs": {
-    "url": "https://github.com/pixari/vue-i18n-extract/issues"
-  },
+  "files": [
+    "dist-*/",
+    "bin/"
+  ],
+  "source": "dist-src/index.js",
+  "types": "dist-types/index.d.ts",
+  "main": "dist-node/index.js",
+  "pika": true,
+  "sideEffects": false,
   "keywords": [
     "javascript",
     "typescript",
@@ -29,25 +24,13 @@
     "internationalization",
     "internationalization-plugin"
   ],
-  "author": "Raffaele Pizzari <raffaele.pizzari@gmail.com> (https://raffaelepizzari.com)",
-  "@pika/pack": {
-    "pipeline": [
-      [
-        "@pika/plugin-ts-standard-pkg"
-      ],
-      [
-        "@pika/plugin-build-node",
-        {
-          "minNodeVersion": "10"
-        }
-      ],
-      [
-        "@pika/plugin-simple-bin",
-        {
-          "bin": "vue-i18n-extract"
-        }
-      ]
-    ]
+  "homepage": "https://github.com/pixari/vue-i18n-extract",
+  "bugs": {
+    "url": "https://github.com/pixari/vue-i18n-extract/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pixari/vue-i18n-extract"
   },
   "dependencies": {
     "cli-table3": "^0.5.1",
