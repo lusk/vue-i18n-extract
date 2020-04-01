@@ -21,12 +21,12 @@ function logMissingKeys(keys) {
       border: ['white'],
       compact: true
     },
-    head: ['#', 'Language', 'File', 'Line', 'Missing i18n Entry'],
-    colWidths: [maxDigits + 2, 12, 40, 8, 30]
+    head: ['#', 'Language', 'File', 'Line', 'Missing i18n Entry', 'Default'],
+    colWidths: [maxDigits + 2, 12, 40, 8, 30, 30]
   });
   keys.forEach((key, i) => {
     const file_trunc = key.file.length > 40 ? `…${key.file.slice(key.file.length - 36, key.file.length)}` : key.file;
-    table.push([i, key.language, file_trunc, key.line, key.path]);
+    table.push([i, key.language, file_trunc, key.line, key.path, key.default]);
   }); // tslint:disable-next-line
 
   console.log(table.toString());
@@ -137,8 +137,8 @@ function extractI18nItemsFromVueFiles(sourceFiles) {
  */
 
 function extractMethodMatches(file) {
-  const methodRegExp = /(?:[$ .]tc?)\(\s*?(["'`])((?:[^\\]|\\.)*?)\1/g;
-  return [...getMatches(file, methodRegExp, 2)];
+  const methodRegExp = /[$ .]tc?\(\s*[\\"'`]+(.*?)[\\"'`]+,*\s*[\\"'`]*(.*?)\s*[\\"'`]*\s*?\)/g;
+  return [...getDefaultMatches(file, methodRegExp, [1,2])];
 }
 
 function extractComponentMatches(file) {
@@ -149,6 +149,24 @@ function extractComponentMatches(file) {
 function extractDirectiveMatches(file) {
   const directiveRegExp = /v-t="'(.*?)'"/g;
   return [...getMatches(file, directiveRegExp)];
+}
+
+function* getDefaultMatches(file, regExp, captureGroup) {
+  while (true) {
+    const match = regExp.exec(file.content);
+
+    if (match === null) {
+      break;
+    }
+
+    const line = (file.content.substring(0, match.index).match(/\n/g) || []).length + 1;
+    yield {
+      path: match[captureGroup[0]],
+      line,
+      file: file.fileName,
+      default: match[captureGroup[1]]
+    };
+  }
 }
 
 function* getMatches(file, regExp, captureGroup = 1) {
@@ -170,13 +188,15 @@ function* getMatches(file, regExp, captureGroup = 1) {
 
 function extractI18nItemsFromLanguageFiles(languageFiles) {
   return languageFiles.reduce((accumulator, file) => {
-    const language = file.fileName.substring(file.fileName.lastIndexOf('/') + 1, file.fileName.lastIndexOf('.'));
+    const sansFileName = file.fileName.substring(0, file.fileName.lastIndexOf('/'));
+    const language = file.fileName.substring(sansFileName.lastIndexOf('/') + 1, sansFileName.length);
     const flattenedObject = dot.dot(file.content);
     const i18nInFile = Object.keys(flattenedObject).map((key, index) => {
       return {
         line: index,
         path: key,
-        file: file.fileName
+        file: file.fileName,
+        lang: language
       };
     });
     accumulator[language] = i18nInFile;
@@ -260,10 +280,23 @@ class VueI18NExtract {
 
   writeMissingToLanguage(resolvedLanguageFiles, i18nReport) {
     var globArray = glob.sync(resolvedLanguageFiles);
-    var parsedContent = globArray.map(f => fs.readFileSync(f, 'utf8')).map(i => JSON.parse(i));
+    const filesContents = globArray.map(f => {
+      const sansFileName = f.substring(0, f.lastIndexOf('/'));
+      const language = f.substring(sansFileName.lastIndexOf('/') + 1, sansFileName.length);
+
+      return {
+        language: language,
+        content: JSON.parse(fs.readFileSync(f, 'utf8'))
+      }
+    })
+
     i18nReport.missingKeys.forEach(item => {
-      parsedContent.forEach(i => dot.str(item.path, '', i));
+      const defaultString = item.language === 'en' ? item.default : ''
+      dot.str(item.path, defaultString , filesContents.find(file => file.language === item.language)['content'])
     });
+
+    const parsedContent = filesContents.map(value => value.content)
+
     let stringifyiedContent = parsedContent.map(i => JSON.stringify(i, null, 2));
     stringifyiedContent.forEach((i, index) => fs.writeFileSync(globArray[index], i));
   }
