@@ -137,7 +137,7 @@ function extractI18nItemsFromVueFiles(sourceFiles) {
  */
 
 function extractMethodMatches(file) {
-  const methodRegExp = /[$ .]tc?\(\s*[\\"'`]+(.*?)[\\"'`]+,*\s*[\\"'`]*(.*?)\s*[\\"'`]*\s*?\)/g;
+  const methodRegExp = /[$ .]tc?\(\s*[\\"'`]+(.*?)[\\"'`]+,*\s*[\\"'`]*(.*?)\s*[\\"'`]*\s*?\)*/g;
   return [...getDefaultMatches(file, methodRegExp, [1,2])];
 }
 
